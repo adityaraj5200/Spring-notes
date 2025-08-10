@@ -22,8 +22,6 @@ IoC is a design principle where the control of object creation, configuration, a
 **Without IoC (Traditional Java)**:
 
 ```java
-java
-CopyEdit
 Car car = new Car(new Engine());
 
 ```
@@ -33,8 +31,7 @@ Here, the `Car` class is responsible for creating the `Engine` — tightly coupl
 **With IoC (Spring)**:
 
 ```java
-java
-CopyEdit
+
 @Component
 class Car {
     private final Engine engine;
@@ -61,8 +58,6 @@ Dependency Injection is the process of providing required dependencies to a clas
 1. **Constructor Injection** (Preferred in most cases)
     
     ```java
-    java
-    CopyEdit
     @Component
     class Car {
         private final Engine engine;
@@ -77,8 +72,6 @@ Dependency Injection is the process of providing required dependencies to a clas
 2. **Setter Injection**
     
     ```java
-    java
-    CopyEdit
     @Component
     class Car {
         private Engine engine;
@@ -92,8 +85,6 @@ Dependency Injection is the process of providing required dependencies to a clas
 3. **Field Injection** (Not recommended — hard to test)
     
     ```java
-    java
-    CopyEdit
     @Autowired
     private Engine engine;
     
@@ -117,8 +108,6 @@ It goes through a defined **lifecycle**: instantiation → dependency injection 
 1. **Annotation-based**
     
     ```java
-    java
-    CopyEdit
     @Component
     public class Engine {}
     
@@ -127,8 +116,6 @@ It goes through a defined **lifecycle**: instantiation → dependency injection 
 2. **Java Configuration**
     
     ```java
-    java
-    CopyEdit
     @Configuration
     public class AppConfig {
         @Bean
@@ -162,8 +149,6 @@ Bean scope defines how many instances of a bean are created and how they are sha
 **Example**:
 
 ```java
-java
-CopyEdit
 @Scope("prototype")
 @Component
 public class Engine {}
