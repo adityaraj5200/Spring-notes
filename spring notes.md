@@ -1604,3 +1604,944 @@ public class DefaultProcessor implements Processor {}
 **Gotcha:**
 
 If `@Qualifier` is specified at injection point, it overrides `@Primary`.
+
+### Easy #71–75
+
+**#71. What is the purpose of `@Autowired(required = false)`?**
+It tells Spring to inject the dependency if available, but not to fail if the bean is missing.
+
+Example:
+
+```java
+@Autowired(required = false)
+private Optional<AuditService> auditService;
+```
+
+**Gotcha:**
+If you don’t handle the `null` case (or use `Optional`), you may get `NullPointerException` at runtime.
+
+---
+
+**#72. How do you inject prototype beans into singleton beans?**
+Direct injection leads to a single instance being reused. Use `ObjectProvider` or `Provider<T>` to get a new instance each time.
+
+Example:
+
+```java
+@Autowired
+private ObjectProvider<Task> taskProvider;
+
+public void execute() {
+    Task t = taskProvider.getObject();
+}
+```
+
+**Gotcha:**
+Without this, the prototype scope won’t work as expected inside singleton beans.
+
+---
+
+**#73. What is the difference between `@PostConstruct` and `InitializingBean.afterPropertiesSet()`?**
+
+* `@PostConstruct` — annotation from `javax.annotation`, runs after dependency injection is complete.
+* `afterPropertiesSet()` — method from Spring’s `InitializingBean` interface, also runs after properties are set.
+
+**Gotcha:**
+Prefer `@PostConstruct` for cleaner, framework-independent code.
+
+---
+
+**#74. What is the use of `@DependsOn` in Spring?**
+`@DependsOn` enforces initialization order between beans.
+
+Example:
+
+```java
+@Component
+@DependsOn("databaseInitializer")
+public class ReportService {}
+```
+
+**Gotcha:**
+It does not guarantee destruction order — only initialization order.
+
+---
+
+**#75. How do you override a bean definition in Spring Boot?**
+Define another bean with the same name in a configuration class. In Spring Boot 2.1+, bean overriding must be explicitly enabled:
+
+```properties
+spring.main.allow-bean-definition-overriding=true
+```
+
+**Gotcha:**
+Overriding beans can break auto-configuration — use cautiously and document clearly.
+
+### Easy #76–80
+
+**#76. How can you access the ApplicationContext from a bean?**
+Implement `ApplicationContextAware` and override `setApplicationContext()`.
+
+Example:
+
+```java
+@Component
+public class MyBean implements ApplicationContextAware {
+    private ApplicationContext context;
+
+    @Override
+    public void setApplicationContext(ApplicationContext ctx) {
+        this.context = ctx;
+    }
+}
+```
+
+**Gotcha:**
+This creates tight coupling to Spring — avoid unless absolutely necessary.
+
+---
+
+**#77. What is the difference between `@Component` and `@Repository`?**
+Both are stereotype annotations for component scanning, but:
+
+* `@Repository` is for DAO/persistence layer beans and adds persistence exception translation.
+* `@Component` is a generic stereotype for any Spring-managed bean.
+
+**Gotcha:**
+The extra exception translation in `@Repository` is only applied when Spring’s persistence exception translation is enabled.
+
+---
+
+**#78. How do you programmatically register a bean at runtime?**
+Use `ConfigurableApplicationContext`’s `getBeanFactory().registerSingleton()` or `registerBeanDefinition()`.
+
+Example:
+
+```java
+@Bean
+public ApplicationRunner runner(ConfigurableApplicationContext ctx) {
+    ctx.getBeanFactory().registerSingleton("dynamicBean", new MyBean());
+    return args -> {};
+}
+```
+
+**Gotcha:**
+Manually registered beans skip standard lifecycle callbacks unless explicitly invoked.
+
+---
+
+**#79. How can you inject a property from an external file not loaded by default?**
+Use `@PropertySource` in a configuration class.
+
+Example:
+
+```java
+@Configuration
+@PropertySource("classpath:custom.properties")
+public class AppConfig {}
+```
+
+**Gotcha:**
+If file is missing, context startup will fail unless you set `ignoreResourceNotFound = true`.
+
+---
+
+**#80. How do you mark a bean to be loaded before others during startup?**
+Use `@DependsOn` or `SmartLifecycle` with a lower phase value for early initialization.
+
+Example:
+
+```java
+@Component
+@DependsOn("earlyBean")
+public class AnotherBean {}
+```
+
+**Gotcha:**
+Early loading can slow startup — only use when initialization order is critical.
+
+### Easy #81–85
+
+**#81. What is the difference between `@Configuration` and `@Component`?**
+
+* `@Configuration` marks a class as a source of bean definitions using `@Bean` methods.
+* `@Component` marks a class as a bean to be autodetected during component scanning.
+* `@Configuration` classes are enhanced using CGLIB proxies to ensure singleton beans are returned even if `@Bean` methods are called multiple times.
+
+**Gotcha:**
+If you use `@Component` instead of `@Configuration` for a config class, calling `@Bean` methods manually will create new instances instead of returning the managed singleton.
+
+---
+
+**#82. How do you define a lazy-initialized bean?**
+Use `@Lazy` at the class or method level to defer bean instantiation until it’s first requested.
+
+Example:
+
+```java
+@Component
+@Lazy
+public class HeavyBean {}
+```
+
+**Gotcha:**
+Lazy initialization can reduce startup time, but the first access to the bean may introduce a delay in execution.
+
+---
+
+**#83. How can you get all beans of a certain type?**
+Inject a `Map<String, T>` or `List<T>` where `T` is the type of bean you want.
+
+Example:
+
+```java
+@Autowired
+private Map<String, PaymentProcessor> processors;
+```
+
+**Gotcha:**
+The map keys are bean names, which can be useful for dynamic selection at runtime.
+
+---
+
+**#84. What is the difference between `@Autowired` and `@Inject`?**
+
+* `@Autowired` is Spring-specific and supports features like `required=false`.
+* `@Inject` is a JSR-330 standard annotation (from `javax.inject`) and is framework-agnostic.
+
+**Gotcha:**
+If you need `required=false`, you must use `@Autowired`; `@Inject` does not support it directly.
+
+---
+
+**#85. How can you inject values from command-line arguments or environment variables in Spring Boot?**
+They are automatically available via the `Environment` and `@Value` annotations.
+
+Example:
+
+```java
+@Value("${server.port}")
+private int port;
+```
+
+**Gotcha:**
+Spring Boot resolves properties from multiple sources with a defined precedence; command-line args override `application.properties`.
+
+### Easy #86–90
+
+**#86. What’s the difference between `ApplicationContext` and `BeanFactory`?**
+
+* `BeanFactory` is the basic Spring container providing DI and bean lifecycle management.
+* `ApplicationContext` extends `BeanFactory` and adds enterprise features like event publishing, internationalization, and AOP integration.
+
+**Gotcha:**
+In almost all modern Spring applications, `ApplicationContext` is used; `BeanFactory` is typically for lightweight or resource-constrained scenarios.
+
+---
+
+**#87. How do you conditionally create beans based on a property value?**
+Use `@ConditionalOnProperty` in Spring Boot or a custom `@Conditional` in core Spring.
+
+Example:
+
+```java
+@Bean
+@ConditionalOnProperty(name = "featureX.enabled", havingValue = "true")
+public FeatureX featureX() {
+    return new FeatureX();
+}
+```
+
+**Gotcha:**
+If you don’t specify `matchIfMissing=true`, the bean will not be created when the property is absent.
+
+---
+
+**#88. What’s the use of `@Qualifier` in Spring?**
+It’s used to disambiguate beans when multiple candidates exist for injection.
+
+Example:
+
+```java
+@Autowired
+@Qualifier("paypalProcessor")
+private PaymentProcessor processor;
+```
+
+**Gotcha:**
+If you use `@Qualifier`, the bean name in the annotation must match exactly with the Spring bean name.
+
+---
+
+**#89. How do you provide default values when injecting properties with `@Value`?**
+Use the `:` operator inside the placeholder.
+
+Example:
+
+```java
+@Value("${timeout:5000}")
+private int timeout;
+```
+
+**Gotcha:**
+Default values are only applied if the property is missing, not if it’s present but empty.
+
+---
+
+**#90. How can you listen to application events in Spring?**
+Implement `ApplicationListener<E>` or annotate a method with `@EventListener`.
+
+Example:
+
+```java
+@EventListener
+public void handleContextStart(ContextStartedEvent event) {
+    // logic
+}
+```
+
+**Gotcha:**
+If you need asynchronous event handling, combine `@EventListener` with `@Async`.
+
+### Easy #91–95
+
+**#91. How do you profile-specific beans in Spring?**
+Use `@Profile` to define beans that are only loaded for certain active profiles.
+
+Example:
+
+```java
+@Bean
+@Profile("dev")
+public DataSource devDataSource() {
+    return new H2DataSource();
+}
+```
+
+**Gotcha:**
+If no profile is active, beans without any `@Profile` annotation will still load, but profile-specific beans won’t.
+
+---
+
+**#92. How do you externalize configuration in Spring Boot?**
+Use `application.properties` or `application.yml`, environment variables, command-line args, or config server integration.
+
+Example (`application.properties`):
+
+```
+server.port=8081
+```
+
+**Gotcha:**
+Spring Boot uses a well-defined property source order; values in environment variables and command-line args override those in property files.
+
+---
+
+**#93. What is the use of `@Primary`?**
+It designates a bean as the preferred candidate when multiple beans of the same type exist.
+
+Example:
+
+```java
+@Bean
+@Primary
+public PaymentProcessor defaultProcessor() {
+    return new CreditCardProcessor();
+}
+```
+
+**Gotcha:**
+`@Primary` is overridden by `@Qualifier` when both are present.
+
+---
+
+**#94. How do you disable a specific auto-configuration in Spring Boot?**
+Use `@SpringBootApplication(exclude = {ClassName.class})` or `@EnableAutoConfiguration(exclude = {ClassName.class})`.
+
+Example:
+
+```java
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+public class App {}
+```
+
+**Gotcha:**
+The excluded class must be the actual auto-configuration class, not just a related configuration or bean.
+
+---
+
+**#95. How can you create immutable configuration properties in Spring Boot?**
+Use `@ConfigurationProperties` with `final` fields and a constructor.
+
+Example:
+
+```java
+@ConfigurationProperties(prefix = "app")
+public record AppProperties(String name, int timeout) {}
+```
+
+**Gotcha:**
+Immutable properties require either a `record` type or a class with only final fields and a constructor; setters are not needed.
+
+### Easy #96–100
+
+**#96. How can you access application arguments in Spring Boot?**
+Inject `ApplicationArguments` into a bean.
+
+Example:
+
+```java
+@Component
+public class ArgsReader {
+    public ArgsReader(ApplicationArguments args) {
+        System.out.println("Non-option args: " + args.getNonOptionArgs());
+        System.out.println("Option args: " + args.getOptionNames());
+    }
+}
+```
+
+**Gotcha:**
+`ApplicationArguments` separates named options from plain arguments, which is useful for command-line parsing without manual string splitting.
+
+---
+
+**#97. What is the difference between `@SpringBootApplication` and `@EnableAutoConfiguration`?**
+
+* `@SpringBootApplication` is a convenience annotation that combines:
+
+  * `@Configuration`
+  * `@EnableAutoConfiguration`
+  * `@ComponentScan`
+* `@EnableAutoConfiguration` alone only enables auto-configuration but does not scan for components outside its package scope.
+
+**Gotcha:**
+If you replace `@SpringBootApplication` with `@EnableAutoConfiguration`, you must explicitly add `@ComponentScan` to detect your beans.
+
+---
+
+**#98. How do you configure multiple property files in Spring Boot?**
+Use `@PropertySource` for additional files or define multiple profiles in `application-{profile}.properties`.
+
+Example:
+
+```java
+@PropertySource("classpath:extra.properties")
+@Configuration
+public class ExtraConfig {}
+```
+
+**Gotcha:**
+`@PropertySource` does not support YAML files directly; use `.properties` or load YAML manually.
+
+---
+
+**#99. How do you change the active Spring profile at runtime?**
+Set `spring.profiles.active` as a JVM argument, environment variable, or in property files.
+
+Example (command line):
+
+```
+java -jar app.jar --spring.profiles.active=prod
+```
+
+**Gotcha:**
+Changing profiles after the context is initialized requires a full context restart; profiles are not dynamically switchable.
+
+---
+
+**#100. How do you create a bean only if another bean is present?**
+Use `@ConditionalOnBean` annotation.
+
+Example:
+
+```java
+@Bean
+@ConditionalOnBean(DataSource.class)
+public JdbcTemplate jdbcTemplate(DataSource ds) {
+    return new JdbcTemplate(ds);
+}
+```
+
+**Gotcha:**
+Bean matching for `@ConditionalOnBean` happens at configuration time; if the dependent bean is created later, this condition won’t trigger.
+
+### Medium #101–105
+
+**#101. Explain the architecture of Spring MVC.**
+Spring MVC follows the Front Controller pattern using `DispatcherServlet` as the central component:
+
+1. **Request Handling:** `DispatcherServlet` intercepts all incoming requests.
+2. **Handler Mapping:** Determines which controller method should handle the request.
+3. **Controller Execution:** Invokes the method, returning a `ModelAndView` or data object.
+4. **View Resolver:** Maps the view name to an actual view implementation (e.g., JSP, Thymeleaf).
+5. **Response Rendering:** The view is rendered and sent back to the client.
+
+**Gotcha:**
+If no view resolver is configured, and you return a view name, you’ll get a `404` because Spring can’t resolve the logical name to a template.
+
+---
+
+**#102. How do you create a REST endpoint in Spring Boot?**
+Use `@RestController` and mapping annotations like `@GetMapping`, `@PostMapping`.
+
+Example:
+
+```java
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable Long id) {
+        return service.findById(id);
+    }
+}
+```
+
+**Gotcha:**
+If you forget `@RestController` and use `@Controller` instead, without `@ResponseBody`, Spring will try to resolve a view instead of returning JSON.
+
+---
+
+**#103. How can you return custom HTTP status codes from a REST API?**
+Use `ResponseEntity` or annotate the method with `@ResponseStatus`.
+
+Example with `ResponseEntity`:
+
+```java
+@GetMapping("/health")
+public ResponseEntity<String> healthCheck() {
+    return new ResponseEntity<>("OK", HttpStatus.OK);
+}
+```
+
+Example with `@ResponseStatus`:
+
+```java
+@ResponseStatus(HttpStatus.CREATED)
+@PostMapping("/users")
+public void createUser(@RequestBody User user) { ... }
+```
+
+**Gotcha:**
+`@ResponseStatus` is static; it cannot set status codes dynamically at runtime.
+
+---
+
+**#104. How do you validate incoming request data in Spring MVC?**
+Use `@Valid` or `@Validated` with Bean Validation (JSR-380) annotations.
+
+Example:
+
+```java
+public class UserDto {
+    @NotNull @Size(min = 2)
+    private String name;
+}
+
+@PostMapping("/users")
+public void createUser(@Valid @RequestBody UserDto dto, BindingResult result) {
+    if (result.hasErrors()) {
+        throw new ValidationException(result.toString());
+    }
+}
+```
+
+**Gotcha:**
+When using `@Valid` with `@RequestBody`, you must also have a `MethodValidationPostProcessor` or a default validator configured for it to work.
+
+---
+
+**#105. What is the difference between `@RequestParam` and `@PathVariable`?**
+
+* `@RequestParam`: Extracts query parameters or form data.
+* `@PathVariable`: Extracts values from the URI path.
+
+Example:
+
+```java
+@GetMapping("/search")
+public String search(@RequestParam String q) { ... }
+
+@GetMapping("/users/{id}")
+public String getUser(@PathVariable Long id) { ... }
+```
+
+**Gotcha:**
+If you mismatch the path variable name with the method parameter name without explicitly specifying it in `@PathVariable("name")`, you’ll get a binding error.
+
+### Medium #106–110
+
+**#106. How does Spring handle file uploads in a web application?**
+Spring uses `MultipartResolver` to handle file uploads. In Spring Boot, `StandardServletMultipartResolver` is auto-configured when `spring.servlet.multipart.enabled=true` (default).
+
+Example:
+
+```java
+@PostMapping("/upload")
+public String handleFileUpload(@RequestParam("file") MultipartFile file) {
+    return "Uploaded: " + file.getOriginalFilename();
+}
+```
+
+Configuration in `application.properties`:
+
+```
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=15MB
+```
+
+**Gotcha:**
+If `MultipartResolver` is not configured, uploaded files won’t be parsed, and `MultipartFile` parameters will be `null`.
+
+---
+
+**#107. How do you secure a REST API endpoint with Spring Security?**
+Add Spring Security dependency and configure HTTP security rules.
+
+Example:
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+            .antMatchers("/api/admin/**").hasRole("ADMIN")
+            .antMatchers("/api/**").authenticated()
+            .and().httpBasic();
+    }
+}
+```
+
+**Gotcha:**
+Without explicitly disabling CSRF for APIs (`csrf().disable()`), POST requests without a CSRF token will be rejected.
+
+---
+
+**#108. What is a `HandlerInterceptor` and how is it used?**
+`HandlerInterceptor` allows pre- and post-processing of requests before they reach the controller or after the view is rendered.
+
+Example:
+
+```java
+@Component
+public class LoggingInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) {
+        System.out.println("Request URI: " + req.getRequestURI());
+        return true;
+    }
+}
+```
+
+Register it:
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new LoggingInterceptor());
+    }
+}
+```
+
+**Gotcha:**
+If `preHandle()` returns `false`, the request is not forwarded to the controller.
+
+---
+
+**#109. How do you implement exception handling in Spring MVC?**
+Use `@ControllerAdvice` with `@ExceptionHandler` to centralize exception handling.
+
+Example:
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+}
+```
+
+**Gotcha:**
+`@ControllerAdvice` works across controllers only if it’s in a package scanned by Spring’s `@ComponentScan`.
+
+---
+
+**#110. What is the role of `ViewResolver` in Spring MVC?**
+`ViewResolver` maps a logical view name returned by a controller to an actual view implementation (e.g., JSP, Thymeleaf).
+
+Example:
+
+```java
+@Bean
+public InternalResourceViewResolver viewResolver() {
+    InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+    resolver.setPrefix("/WEB-INF/views/");
+    resolver.setSuffix(".jsp");
+    return resolver;
+}
+```
+
+**Gotcha:**
+If multiple `ViewResolver`s are defined without order, Spring may pick the wrong one, causing unexpected rendering errors.
+
+### Medium #111–115
+
+**#111. How does Spring Boot simplify dependency management compared to classic Spring?**
+Spring Boot uses “starters” (like `spring-boot-starter-web`) to bundle commonly used dependencies and versions, reducing manual dependency configuration and compatibility issues.
+
+**Gotcha:**
+Including unnecessary starters can bloat your project; always verify transitive dependencies.
+
+---
+
+**#112. Explain the difference between `@RestController` and `@Controller`.**
+
+* `@RestController` combines `@Controller` and `@ResponseBody`, so methods return data directly (JSON/XML).
+* `@Controller` is used for traditional MVC returning view names.
+
+**Gotcha:**
+Using `@Controller` without `@ResponseBody` on REST endpoints causes Spring to look for view templates, often resulting in errors.
+
+---
+
+**#113. What is the purpose of `@RequestBody` and `@ResponseBody` annotations?**
+
+* `@RequestBody` binds HTTP request body (usually JSON) to a Java object.
+* `@ResponseBody` serializes the returned Java object to HTTP response (usually JSON).
+
+**Gotcha:**
+Without these, Spring treats parameters and return values as form data and view names respectively.
+
+---
+
+**#114. How do you handle Cross-Origin Resource Sharing (CORS) in Spring Boot?**
+Use `@CrossOrigin` on controllers or methods or configure globally via `WebMvcConfigurer`.
+
+Example:
+
+```java
+@CrossOrigin(origins = "http://example.com")
+@GetMapping("/data")
+public Data getData() { ... }
+```
+
+**Gotcha:**
+Global CORS config takes precedence over method-level annotations.
+
+---
+
+**#115. How does Spring Boot actuator help in production?**
+Provides ready-made endpoints for health, metrics, info, environment, and more, helping monitor and manage apps in production.
+
+Example:
+Access `/actuator/health` for health status.
+
+**Gotcha:**
+Sensitive endpoints must be secured to prevent information leakage.
+
+### Medium #116–120
+
+**#116. How can you configure custom error pages in Spring Boot?**
+Place `error.html` in `src/main/resources/templates` for default error handling or create specific error pages like `404.html`, `500.html`. Alternatively, implement `ErrorController` to customize programmatically.
+
+Example:
+
+```java
+@Controller
+public class CustomErrorController implements ErrorController {
+    @RequestMapping("/error")
+    public String handleError() {
+        return "customErrorPage";
+    }
+}
+```
+
+**Gotcha:**
+Default Spring Boot error handling can override custom pages if not properly configured, ensure no conflicting error handlers exist.
+
+---
+
+**#117. What is the use of `@RestControllerAdvice`?**
+Combines `@ControllerAdvice` and `@ResponseBody`. It globally handles exceptions for REST controllers and returns JSON responses.
+
+Example:
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+}
+```
+
+**Gotcha:**
+Without `@RestControllerAdvice`, exception handlers may return views instead of JSON in REST APIs.
+
+---
+
+**#118. How does Spring Boot support configuration via YAML files?**
+Spring Boot can parse `application.yml` with hierarchical property support.
+
+Example:
+
+```yaml
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:mysql://localhost/test
+```
+
+**Gotcha:**
+Indentation is critical; incorrect YAML format can cause startup failures.
+
+---
+
+**#119. How do you enable method-level security in Spring?**
+Add `@EnableMethodSecurity` or `@EnableGlobalMethodSecurity` and use annotations like `@PreAuthorize` on methods.
+
+Example:
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+public void deleteUser(Long id) { ... }
+```
+
+**Gotcha:**
+Method security requires proxy-based Spring AOP; internal calls to secured methods within the same class won’t trigger security checks.
+
+---
+
+**#120. How does Spring Boot handle database schema initialization?**
+Uses `schema.sql` and `data.sql` files by default or configures `spring.jpa.hibernate.ddl-auto` property (`create`, `update`, `validate`, etc.) for Hibernate-managed schema updates.
+
+**Gotcha:**
+Using both SQL scripts and Hibernate auto-DDL together can cause conflicts; prefer one method in production.
+
+### Medium #121–125
+
+**#121. What are the key features of Spring Boot starters?**
+Starters are dependency descriptors that bundle a set of related dependencies, simplifying Maven/Gradle setup. For example, `spring-boot-starter-web` includes Spring MVC, Jackson, and embedded Tomcat.
+
+**Gotcha:**
+Adding multiple overlapping starters can cause version conflicts or unnecessary dependencies.
+
+---
+
+**#122. How does Spring Boot’s `@SpringBootApplication` annotation work internally?**
+It combines three annotations:
+
+* `@Configuration` — marks the class as a source of bean definitions.
+* `@EnableAutoConfiguration` — triggers Spring Boot’s auto-configuration mechanism.
+* `@ComponentScan` — enables scanning for components in the package and sub-packages.
+
+**Gotcha:**
+Placing your main class outside base packages may cause component scanning to miss beans.
+
+---
+
+**#123. Explain the difference between `@ComponentScan` basePackages and basePackageClasses attributes.**
+
+* `basePackages` specifies package names as strings to scan.
+* `basePackageClasses` specifies classes; Spring scans the package(s) of those classes.
+
+Example:
+
+```java
+@ComponentScan(basePackageClasses = MyApp.class)
+```
+
+**Gotcha:**
+Using `basePackages` with typos causes scanning issues; `basePackageClasses` is type-safe.
+
+---
+
+**#124. What is the use of `@EnableAutoConfiguration`?**
+It tells Spring Boot to automatically configure beans based on classpath dependencies, environment, and other settings.
+
+**Gotcha:**
+You can exclude specific auto-configurations via `exclude` attribute if undesired.
+
+---
+
+**#125. How do you create a custom Spring Boot starter?**
+Create a separate Maven/Gradle module containing dependencies and auto-configuration classes annotated with `@Configuration` and `@Conditional`. Include `spring.factories` file to register auto-configurations.
+
+**Gotcha:**
+Make sure your starter does not create bean definition conflicts with user applications.
+
+### Medium #126–130
+
+**#126. What is the difference between `@ComponentScan` and `@EntityScan`?**
+
+* `@ComponentScan` tells Spring where to find beans/components like `@Service`, `@Repository`, `@Controller`.
+* `@EntityScan` tells Spring Data JPA where to find entity classes for ORM mapping.
+
+**Gotcha:**
+Failing to use `@EntityScan` when your entities are outside the main package can cause runtime errors like `No identifier specified`.
+
+---
+
+**#127. How does Spring Boot’s actuator endpoint security work?**
+Actuator endpoints can be secured by Spring Security, controlling access via roles or IP restrictions. You can configure endpoint exposure and security in `application.properties`.
+
+Example:
+
+```
+management.endpoints.web.exposure.include=health,info
+management.endpoint.health.show-details=when_authorized
+```
+
+**Gotcha:**
+By default, sensitive endpoints like `/env` or `/beans` are not exposed and need explicit configuration.
+
+---
+
+**#128. How do you enable HTTPS in Spring Boot?**
+Configure SSL properties in `application.properties` with keystore location and passwords.
+
+Example:
+
+```
+server.ssl.key-store=classpath:keystore.p12
+server.ssl.key-store-password=secret
+server.ssl.keyStoreType=PKCS12
+server.port=8443
+```
+
+**Gotcha:**
+Failing to configure a valid keystore or missing SSL settings leads to startup errors or insecure HTTP fallback.
+
+---
+
+**#129. What is the purpose of `@ConditionalOnMissingBean`?**
+It creates a bean only if no bean of the specified type is already registered, allowing users to override auto-configured beans.
+
+Example:
+
+```java
+@Bean
+@ConditionalOnMissingBean(DataSource.class)
+public DataSource defaultDataSource() {
+    return new HikariDataSource();
+}
+```
+
+**Gotcha:**
+If your custom bean’s type doesn’t match exactly, Spring Boot auto-configuration may still create a default bean causing conflicts.
+
+---
+
+**#130. How do you externalize sensitive credentials in Spring Boot?**
+Use environment variables, encrypted property files (with Spring Cloud Config and Vault), or JNDI environment entries.
+
+**Gotcha:**
+Hardcoding credentials in `application.properties` is a security risk and should be avoided in production.
