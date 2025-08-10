@@ -1,4 +1,4 @@
-### **#1. What is the Spring Framework?**
+**#1. What is the Spring Framework?**
 
 Spring is an open-source Java framework for building enterprise-grade applications.
 
@@ -15,7 +15,7 @@ Instead of writing all the JDBC boilerplate code for DB connections, transaction
 
 ---
 
-### **#2. What is Inversion of Control (IoC) in Spring?**
+**#2. What is Inversion of Control (IoC) in Spring?**
 
 IoC is a design principle where the control of object creation, configuration, and lifecycle is shifted from the developer to a framework (in this case, the Spring IoC container).
 
@@ -49,7 +49,7 @@ IoC enables **loose coupling**, better testability (via mocks), and flexible con
 
 ---
 
-### **#3. What is Dependency Injection (DI) in Spring and its types?**
+**#3. What is Dependency Injection (DI) in Spring and its types?**
 
 Dependency Injection is the process of providing required dependencies to a class from outside rather than creating them internally. In Spring, the IoC container manages DI.
 
@@ -97,7 +97,7 @@ If you mix constructor and field injection without care, you may introduce circu
 
 ---
 
-### **#4. What is a Spring Bean and how is it created?**
+**#4. What is a Spring Bean and how is it created?**
 
 A Spring Bean is any object that is **managed by the Spring IoC container**.
 
@@ -134,7 +134,7 @@ All Beans are singletons by default unless scope is changed.
 
 ---
 
-### **#5. Explain Bean Scopes in Spring.**
+**#5. Explain Bean Scopes in Spring.**
 
 Bean scope defines how many instances of a bean are created and how they are shared.
 
