@@ -1,3 +1,4 @@
+### Easy #1–5
 **#1. What is the Spring Framework?**
 
 Spring is an open-source Java framework for building enterprise-grade applications.
@@ -160,7 +161,8 @@ public class Engine {}
 Using `prototype` for heavy objects can cause performance issues; `singleton` is better unless you need per-use instantiation.
 
 **When to use each Spring bean scope:**
-#### **1. Singleton** *(Default)*
+
+**1. Singleton** *(Default)*
 
 - **Behavior:** One shared instance for the entire Spring container.
 - **When to use:**
@@ -171,7 +173,7 @@ Using `prototype` for heavy objects can cause performance issues; `singleton` is
 
 ---
 
-#### **2. prototype**
+**2. prototype**
 
 - **Behavior:** A new instance is created **every time** it’s requested from the container.
 - **When to use:**
@@ -181,7 +183,7 @@ Using `prototype` for heavy objects can cause performance issues; `singleton` is
 
 ---
 
-#### **3. request** *(Web scope)*
+**3. request** *(Web scope)*
 
 - **Behavior:** One bean per **HTTP request**.
 - **When to use:**
@@ -190,7 +192,7 @@ Using `prototype` for heavy objects can cause performance issues; `singleton` is
 
 ---
 
-#### **4. session** *(Web scope)*
+**4. session** *(Web scope)*
 
 - **Behavior:** One bean per **HTTP session**.
 - **When to use:**
@@ -199,7 +201,7 @@ Using `prototype` for heavy objects can cause performance issues; `singleton` is
 
 ---
 
-#### **5. application** *(Web scope)*
+**5. application** *(Web scope)*
 
 - **Behavior:** One bean per **ServletContext** (shared across sessions).
 - **When to use:**
@@ -208,7 +210,7 @@ Using `prototype` for heavy objects can cause performance issues; `singleton` is
 
 ---
 
-#### **6. websocket** *(Web scope)*
+**6. websocket** *(Web scope)*
 
 - **Behavior:** One bean per WebSocket session.
 - **When to use:**
@@ -217,7 +219,7 @@ Using `prototype` for heavy objects can cause performance issues; `singleton` is
 
 ---
 
-### **📌 Quick Decision Table**
+**📌 Quick Decision Table**
 
 | Scope | Lifespan | Best for |
 | --- | --- | --- |
