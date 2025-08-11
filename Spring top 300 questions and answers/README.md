@@ -159,6 +159,75 @@ public class Engine {}
 
 Using `prototype` for heavy objects can cause performance issues; `singleton` is better unless you need per-use instantiation.
 
+**When to use each Spring bean scope:**
+#### **1. Singleton** *(Default)*
+
+- **Behavior:** One shared instance for the entire Spring container.
+- **When to use:**
+    - Bean is **stateless** (no instance variables holding request-specific data).
+    - Configuration, utility, or service classes.
+- **Example:** Service classes in business layer.
+- **⚠️ Avoid if:** Bean holds user/request-specific state — it will cause thread-safety issues.
+
+---
+
+#### **2. prototype**
+
+- **Behavior:** A new instance is created **every time** it’s requested from the container.
+- **When to use:**
+    - Bean is **stateful** and needs to be used for short-lived tasks.
+    - Per-job processors, DTO builders, or objects that should not be reused.
+- **Example:** Batch processing jobs where each job needs a fresh object.
+
+---
+
+#### **3. request** *(Web scope)*
+
+- **Behavior:** One bean per **HTTP request**.
+- **When to use:**
+    - You need to store and process **request-specific** data.
+- **Example:** Objects holding request parameters or computed results for that request only.
+
+---
+
+#### **4. session** *(Web scope)*
+
+- **Behavior:** One bean per **HTTP session**.
+- **When to use:**
+    - Maintain **user-specific state** across multiple requests in the same session.
+- **Example:** Shopping cart, user session details.
+
+---
+
+#### **5. application** *(Web scope)*
+
+- **Behavior:** One bean per **ServletContext** (shared across sessions).
+- **When to use:**
+    - Application-wide data that should be shared between users.
+- **Example:** Global cache, system configuration.
+
+---
+
+#### **6. websocket** *(Web scope)*
+
+- **Behavior:** One bean per WebSocket session.
+- **When to use:**
+    - Store data for a WebSocket connection.
+- **Example:** Live chat session handler.
+
+---
+
+### **📌 Quick Decision Table**
+
+| Scope | Lifespan | Best for |
+| --- | --- | --- |
+| **singleton** | Entire app | Stateless services, shared config |
+| **prototype** | Each request for bean | Short-lived, stateful objects |
+| **request** | HTTP request | Request-scoped data in web apps |
+| **session** | HTTP session | User-specific state |
+| **application** | ServletContext | App-wide shared resources |
+| **websocket** | WebSocket session | WebSocket-specific state |
+
 ### Easy #6–10
 
 **#6. What is the difference between `@Component`, `@Service`, `@Repository`, and `@Controller`?**
